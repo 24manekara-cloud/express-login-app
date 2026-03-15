@@ -2,30 +2,24 @@ const express = require("express");
 const app = express();
 const path = require("path");
 
-const userLoginRouter = require("./Routes/userLogin");
-const userVerificationRouter = require("./Routes/userVerification");
-const login=require("./Templates/loginPage.html");
+// const userLoginRouter = require("./Routes/userLogin");
+// const userVerificationRouter = require("./Routes/userVerification");
 
 /* Middleware */
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-/* Serve frontend files */
-app.use(express.static(path.join(__dirname, "public")));
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
 
 /* Routes */
-app.use("/login", userLoginRouter);
-app.use("/verify", userVerificationRouter);
-app.get("/login",(req,res)=>{
-    res.send("login");
-})
-
+// app.use("/login", userLoginRouter);
+// app.use("/verify", userVerificationRouter);
 
 /* Home route */
+// app.get("/", (req, res) => {
+//     res.sendFile(path.join(__dirname, "Templates", "loginPage.html"));
+// });
 app.get("/", (req, res) => {
-    res.send("Home page");
+    res.send("<h1>Server Working</h1>");
 });
-
 /* Server */
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
