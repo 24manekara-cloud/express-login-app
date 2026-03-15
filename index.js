@@ -4,6 +4,7 @@ const path = require("path");
 
 const userLoginRouter = require("./Routes/userLogin");
 const userVerificationRouter = require("./Routes/userVerification");
+const login=require("./Templates/loginPage.html");
 
 /* Middleware */
 app.use(express.json());
@@ -15,6 +16,10 @@ app.use(express.static(path.join(__dirname, "public")));
 /* Routes */
 app.use("/login", userLoginRouter);
 app.use("/verify", userVerificationRouter);
+app.get("/login",(req,res)=>{
+    res.send("login");
+})
+
 
 /* Home route */
 app.get("/", (req, res) => {
