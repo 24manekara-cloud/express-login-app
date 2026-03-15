@@ -1,26 +1,54 @@
 const express = require("express");
-const router = express.Router();
-const path = require("path");
-const validateUser = require("../Controllers/Services/userValidation");
+const bcrypt = require("bcrypt");
+const User = require("../Models/User");
 
-router.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../Templates/verification.html"));
+const router = express.Router();
+
+router.post("/signup", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).send("User already exists");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword
+    });
+
+    await newUser.save();
+
+    res.status(201).send("Signup successful");
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Error while signing up");
+  }
 });
 
-router.post("/", (req, res) => {
-    const result = validateUser(req.body);
+router.post("/signin", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-    if (result.valid) {
-        res.json({
-            success: true,
-            message: "User data is valid."
-        });
-    } else {
-        res.json({
-            success: false,
-            message: result.message
-        });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).send("Invalid email or password");
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).send("Invalid email or password");
+    }
+
+    res.status(200).send("Login successful");
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Error while signing in");
+  }
 });
 
 module.exports = router;
