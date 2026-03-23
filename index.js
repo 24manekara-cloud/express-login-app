@@ -1,44 +1,160 @@
 const express = require("express");
-const path = require("path");
 const mongoose = require("mongoose");
+const cors = require("cors");
 require("dotenv").config();
-const { spawn } = require("child_process");
-
-const userLoginRouter = require("./Routes/userVerification");
 
 const app = express();
 
+// ======================
+// MIDDLEWARE
+// ======================
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// app.post("/calculate", (req, res) => {
+// ======================
+// USER SCHEMA
+// ======================
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String
+});
 
-//     const python = spawn("python", ["model.py", JSON.stringify(req.body)]);
+const User = mongoose.model("User", userSchema);
 
-//     let result = "";
+// ======================
+// ROUTES
+// ======================
 
-//     python.stdout.on("data", (data) => {
-//         result += data.toString();
-//     });
-
-//     python.on("close", () => {
-//         res.json(JSON.parse(result));
-//     });
-
-// });
-
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 30000
-})
-.then(() => console.log("MongoDB Atlas connected"))
-.catch((err) => console.log("DB connection error:", err.message));
-
-app.use("/user", userLoginRouter);
-
+// Home
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "Templates", "loginPage.html"));
+  res.json({
+    success: true,
+    message: "🎵 Anandmay Backend Running"
+  });
 });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
+// ======================
+// REGISTER
+// ======================
+app.post("/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required"
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "User already exists"
+      });
+    }
+
+    const newUser = new User({
+      name,
+      email,
+      password
+    });
+
+    await newUser.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Signup successful",
+      user: {
+        name: newUser.name,
+        email: newUser.email
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
+  }
 });
+
+// ======================
+// LOGIN
+// ======================
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password required"
+      });
+    }
+
+    const user = await User.findOne({ email, password });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      user: {
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
+  }
+});
+
+// ======================
+// PRODUCTS (for dashboard)
+// ======================
+app.get("/products", (req, res) => {
+  res.json([
+    {
+      name: "Headphones 🎧",
+      price: 2499
+    },
+    {
+      name: "Smart Watch ⌚",
+      price: 3499
+    },
+    {
+      name: "Shoes 👟",
+      price: 1999
+    }
+  ]);
+});
+
+// ======================
+// DATABASE CONNECTION
+// ======================
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+
+    app.listen(process.env.PORT || 4000, () => {
+      console.log(`🚀 Server running on port ${process.env.PORT || 4000}`);
+    });
+  })
+  .catch((err) => {
+    console.log("❌ DB Error:", err.message);
+  });

@@ -35,80 +35,84 @@
   </div>
 
   <script>
-    let form = document.getElementById("verify-form");
+  let form = document.getElementById("verify-form");
 
-    function validateEmail(email) {
-      let pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  function validateEmail(email) {
+    let pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-      if (email === "") {
-        document.getElementById("email-error").innerText = "Email cannot be empty";
-        return false;
-      }
+    if (email === "") {
+      document.getElementById("email-error").innerText = "Email cannot be empty";
+      return false;
+    }
 
-      if (!pattern.test(email)) {
-        document.getElementById("email-error").innerText = "Enter a valid email";
-        return false;
-      }
+    if (!pattern.test(email)) {
+      document.getElementById("email-error").innerText = "Enter a valid email";
+      return false;
+    }
 
-      document.getElementById("email-error").innerText = "";
+    document.getElementById("email-error").innerText = "";
+    return true;
+  }
+
+  function validatePassword(password) {
+    if (password === "") {
+      document.getElementById("password-error").innerText = "Password cannot be empty";
+      return false;
+    }
+
+    if (password.length < 6) {
+      document.getElementById("password-error").innerText = "Password must be at least 6 characters";
+      return false;
+    }
+
+    document.getElementById("password-error").innerText = "";
       return true;
-    }
+  }
 
-    function validatePassword(password) {
-      if (password === "") {
-        document.getElementById("password-error").innerText = "Password cannot be empty";
-        return false;
-      }
-
-      if (password.length < 6) {
-        document.getElementById("password-error").innerText = "Password must be at least 6 characters";
-        return false;
-      }
-
-      document.getElementById("password-error").innerText = "";
-      return true;
-    }
-
-    async function verifyUser(email, password) {
-      const response = await fetch("/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-      return data;
-    }
-
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      let email = document.getElementById("email").value.trim();
-      let password = document.getElementById("password").value.trim();
-
-      let emailValid = validateEmail(email);
-      let passwordValid = validatePassword(password);
-
-      if (emailValid && passwordValid) {
-        try {
-          let result = await verifyUser(email, password);
-
-          document.getElementById("result").innerText = result.message;
-
-          if (result.success) {
-            document.getElementById("result").className = "mt-3 text-center fw-bold text-success";
-          } else {
-            document.getElementById("result").className = "mt-3 text-center fw-bold text-danger";
-          }
-        } catch (error) {
-          document.getElementById("result").innerText = "Server error";
-          document.getElementById("result").className = "mt-3 text-center fw-bold text-danger";
-          console.log(error);
-        }
-      }
+  async function verifyUser(email, password) {
+    const response = await fetch("/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
     });
-  </script>
-</body>
-</html>
+
+    return await response.json();
+  }
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
+
+    let emailValid = validateEmail(email);
+    let passwordValid = validatePassword(password);
+
+    if (emailValid && passwordValid) {
+      try {
+        let result = await verifyUser(email, password);
+
+        document.getElementById("result").innerText = result.message;
+
+        if (result.success) {
+          document.getElementById("result").className =
+            "mt-3 text-center fw-bold text-success";
+
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 1000);
+        } else {
+          document.getElementById("result").className =
+            "mt-3 text-center fw-bold text-danger";
+        }
+      } catch (error) {
+        document.getElementById("result").innerText = "Server error";
+        document.getElementById("result").className =
+          "mt-3 text-center fw-bold text-danger";
+        console.log(error);
+      }
+    }
+  });
+</script>

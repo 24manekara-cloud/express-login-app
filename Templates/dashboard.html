@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #eaeded;
+    }
+
+    .navbar {
+      background: #131921;
+      color: white;
+      padding: 16px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-box input {
+      width: 280px;
+      padding: 10px;
+      border: none;
+      outline: none;
+      border-radius: 4px;
+    }
+
+    .search-box button {
+      padding: 10px 18px;
+      border: none;
+      background: #febd69;
+      color: black;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .search-box button:hover {
+      background: #f3a847;
+    }
+
+    .container {
+      padding: 25px;
+    }
+
+    .title {
+      font-size: 28px;
+      color: #222;
+      margin-bottom: 20px;
+    }
+
+    .loading,
+    .error,
+    .empty {
+      text-align: center;
+      font-size: 20px;
+      margin: 30px 0;
+      color: #333;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      transition: transform 0.2s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .product-image {
+      width: 100%;
+      height: 220px;
+      object-fit: contain;
+      background: #f7f7f7;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .product-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #111;
+      margin-bottom: 8px;
+      min-height: 48px;
+    }
+
+    .product-brand {
+      font-size: 14px;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    .product-category {
+      display: inline-block;
+      background: #ffd814;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .product-price {
+      font-size: 22px;
+      font-weight: bold;
+      color: #b12704;
+      margin-bottom: 8px;
+    }
+
+    .product-rating,
+    .product-score,
+    .product-popularity,
+    .product-id {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .buy-btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background: #ffd814;
+      border-radius: 20px;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .buy-btn:hover {
+      background: #f7ca00;
+    }
+
+    @media (max-width: 600px) {
+      .navbar {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+
+      .search-box input {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="logo">My Store</div>
+    <div class="search-box">
+      <input
+        type="text"
+        id="brandInput"
+        placeholder="Enter brand like Red Tape"
+      />
+      <button onclick="loadProducts()">Search</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="title">Recommended Products</div>
+    <div id="message" class="loading">Search by brand to view products.</div>
+    <div id="products" class="products-grid"></div>
+  </div>
+
+  <script>
+    async function loadProducts() {
+      const brand = document.getElementById("brandInput").value.trim();
+      const message = document.getElementById("message");
+      const productsContainer = document.getElementById("products");
+
+      productsContainer.innerHTML = "";
+      message.className = "loading";
+      message.style.display = "block";
+      message.textContent = "Loading products...";
+
+      try {
+        const response = await fetch("/calculate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ brand: brand })
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+
+        const products = await response.json();
+
+        productsContainer.innerHTML = "";
+
+        if (!Array.isArray(products) || products.length === 0) {
+          message.className = "empty";
+          message.textContent = "No products found for this brand.";
+          return;
+        }
+
+        message.style.display = "none";
+
+        products.forEach(product => {
+          const card = document.createElement("div");
+          card.className = "product-card";
+
+          card.innerHTML = `
+            <img
+              src="${product.image || 'https://via.placeholder.com/250?text=Product'}"
+              alt="${product.name || 'Product'}"
+              class="product-image"
+            />
+            <div class="product-title">${product.name || "No Name"}</div>
+            <div class="product-brand"><strong>Brand:</strong> ${product.brand || "N/A"}</div>
+            <div class="product-category">${product.category || "General"}</div>
+            <div class="product-price">₹${product.price || 0}</div>
+            <div class="product-rating">Rating: ${product.rating ?? "N/A"}</div>
+            <div class="product-popularity">Popularity: ${product.popularity ?? "N/A"}</div>
+            <div class="product-score">Predicted Score: ${product.predicted_score ?? "N/A"}</div>
+            <div class="product-id">Product ID: ${product.id || "N/A"}</div>
+            <button class="buy-btn">Add to Cart</button>
+          `;
+
+          productsContainer.appendChild(card);
+        });
+
+      } catch (error) {
+        message.className = "error";
+        message.textContent = "Error loading products from backend.";
+        console.error(error);
+      }
+    }
+  </script>
+</body>
+</html>
